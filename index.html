@@ -1,0 +1,294 @@
+<html>
+
+<head>
+
+  <meta charset='utf-8' />
+  <title> LA Time Series </title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <script src='https://api.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.js'></script>
+  <link href='https://api.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.css' rel='stylesheet' />
+  <link rel="stylesheet" type="text/css" href="style_LATimeseries.css">
+  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+
+
+
+
+</head>
+
+
+<body>
+
+  <div id='map'></div>
+
+  <div id='console'>
+    <h1>LA Time Series</h1>
+    <!--legend -->
+
+    <div class='session'>
+      <h2>Temperature &#8451;</h2>
+
+      <div class = "scale">
+        <div class = "color" style = "background: #fef0d9"></div>
+        <div class = "color" style = "background: #fdcc8a"></div>
+        <div class = "color" style = "background: #fc8d59"></div>
+        <div class = "color" style = "background: #e34a33"></div>
+        <div class = "color" style = "background: #b30000"></div>
+      </div>
+
+
+      <div class='scale'>
+        <div class='tempLabel'>7</div>
+        <div class='tempLabel'>12</div>
+        <div class='tempLabel'>17</div>
+        <div class='tempLabel'>22</div>
+        <div class='tempLabel'>27</div>
+      </div>
+
+
+      <div class= 'scale'></div>
+      <div class='session' id='sliderbar'>
+          <h2>June 1st, <label id='active-timestamp'>1</label>pm</h2>
+          <input id='slider' class='sliderConst' type='range' min='0' max='4' step='1' value='0' />
+          <!--<div class= 'scale'>-->
+            <div class='dataLabel'>1pm</div>
+            <div class='dataLabel'>2pm</div>
+            <div class='dataLabel'>3pm</div>
+            <div class='dataLabel'>4pm</div>
+            <div class='dataLabel'>5pm</div>
+          </div>
+      </div>
+
+
+      <div class='dynamicData' id='hoverinfo'>
+ 			    <h3>Active Layer Cell Value: <label id='hover-cell'>N/A</label></h3>
+ 	    </div>
+
+      <div class='dynamicData' id='firstLayerValue'><h2>1pm: &nbsp; <label id='hover-cell-1'>N/A</label></h2><div class='movableBar' id='movableBar1'></div></div>
+      <div class='dynamicData' id='secondLayerValue'><h2>2pm:  &nbsp;<label id='hover-cell-2'>N/A</label></h2><div class='movableBar' id='movableBar2'></div></div>
+      <div class='dynamicData' id='thirdLayerValue'><h2>3pm:  &nbsp;<label id='hover-cell-3'>N/A</label></h2><div class='movableBar' id='movableBar3'></div></div>
+      <div class='dynamicData' id='fourthLayerValue'><h2>4pm:  &nbsp;<label id='hover-cell-4'>N/A</label></h2><div class='movableBar' id='movableBar4'></div></div>
+      <div class='dynamicData' id='fifthLayerValue'><h2>5pm:  &nbsp;<label id='hover-cell-5'>N/A</label></h2><div class='movableBar' id='movableBar5'></div></div>
+
+      <!--  START HERE  -->
+      <div id = 'backgroundControl' class='backgroundControl'>
+        <br><div class ="backgroundControlText">Background Image Control</div>
+        <form>
+            <input  type="radio" name="mapBackground" value="Regular" checked> Regular
+            <input  type="radio" name="mapBackground" value="satellite"> Satellite
+        </form>
+      </div>
+    </div>
+    <div id = 'consoleControl'><div id = 'ccText' class = 'consoleControlText'>Hide</div></div>
+
+  <script src="sources.js"></script>
+  <script src="layers.js"></script>
+
+
+
+  <script>
+  mapboxgl.accessToken = 'pk.eyJ1Ijoibm9haC1iIiwiYSI6ImNqbm5qNjdpcjA2dTczdnBna3o3NGVtdm4ifQ.Y-VCtr3LTcEgYsaYe4rt3A';
+
+  var map = new mapboxgl.Map({
+  container: 'map', // container element id
+  style: 'mapbox://styles/noah-b/cjqztjm4f02h22qmpf3hvvk63',
+  center: [ -117.838,33.458], // initial map center in [lon, lat]
+  zoom: 7.8
+  });
+
+
+//load the tileset
+map.on('load', function() {
+
+  var layers = map.getStyle().layers;
+  var layer_IDs = [];
+  var maxValue = 32.8; //this should change for each dataset
+  var minValue = 9; //this should change for each dataset
+  var barWidth = 100; //measured in px, should change if legend is changed
+
+
+
+   // Find the index of the first symbol layer in the map style
+   var firstSymbolId;
+   for (var i = 0; i < layers.length; i++) {
+       if (layers[i].type === 'symbol') {
+           firstSymbolId = layers[i].id;
+           break;
+       }
+   };
+
+
+    //load map sources
+    mapSources.forEach(function(source) {
+        let id = source[0];
+        let obj = source[1];
+        map.addSource(id, obj)
+      });
+
+
+map.addSource("satellite", {
+    "type": "raster",
+    "url": "mapbox://mapbox.satellite",
+    "tileSize": 256
+});
+
+
+
+
+
+
+    //load map layers
+    mapLayers.forEach(function(layer) {
+        let obj = layer[0];
+        map.addLayer(obj, firstSymbolId);
+        layer_IDs.push(obj.id); //adds names of all layers to an array
+      });
+
+
+      map.addLayer({
+        'id': 'satellite', //this layer slows everything down a bit
+        'type': 'raster',
+        'source': 'satellite',
+        'paint': {'raster-opacity': 0} //starts as opaque
+      }, 'time-series1'); //sets it below the lowest data layer
+
+    //makes first layer visible at start
+    map.setPaintProperty(layer_IDs[0], 'fill-opacity',0.65);
+
+    //Changes the layer visible via slider and sets a new active-timestamp
+    document.getElementById('slider').addEventListener('input', function(e) {
+        var time_selection = parseInt(e.target.value); //time_selection gets what number the slider is on
+        var selected_layer = "time-series" + (time_selection + 1); //selected_layer gets layer ID
+        var active_layer = 'time-series' + document.getElementById('active-timestamp').innerText; // layer that is completely visible
+
+        for (var i = 0; i < layer_IDs.length; i++){
+          var ID = layer_IDs[i];
+          if (ID === selected_layer){
+            map.setPaintProperty(selected_layer, 'fill-opacity', 0.65);
+          }
+        }
+        map.setPaintProperty(active_layer, 'fill-opacity', 0);
+		    document.getElementById('active-timestamp').innerText = time_selection + 1; //changes number next to timestamp
+
+  });
+
+  //Changed the Background layer
+  document.getElementById('backgroundControl').addEventListener("click", function(){
+    if (document.getElementsByName('mapBackground')[0].checked){
+      map.setPaintProperty('satellite', 'raster-opacity', 0); //GET RID OF
+
+    }
+    else{
+      map.setPaintProperty('satellite', 'raster-opacity', 1); //GET RID OF
+
+    }
+  });
+
+//Makes the legend vidible or hidden
+  var consoleStatus = "visible";
+  document.getElementById("consoleControl").addEventListener("click", function(){
+
+    //if visible, make invisible and move button
+    if (consoleStatus === "visible"){
+      document.getElementById("console").style.visibility = "hidden";
+      document.getElementById("consoleControl").style.left = "20px";
+      document.getElementById("ccText").innerHTML = "Show";
+      consoleStatus = "hidden";
+    }
+    //otherwise, make visible and move button back
+    else{
+      document.getElementById("consoleControl").style.left = "300px";
+      document.getElementById("console").style.visibility = "visible";
+      document.getElementById("ccText").innerHTML = "Hide";
+      consoleStatus = "visible";
+
+    }
+  });
+
+  //Change mouse cursor from pointer to arrow
+  map.getCanvas().style.cursor = 'default';
+
+
+//Gets value of cell hovered over
+	map.on('mousemove', 'time-series1' , function (e) { //'time-series1' is arbitrary
+
+    //Gets value for active layer
+    var active_layer = 'time-series' + document.getElementById('active-timestamp').innerText;
+    //Gets value for all layers
+    for (var i = 0; i < layer_IDs.length; i++){
+      var current_layer = 'time-series' + (i+1);
+      var divID = 'hover-cell-' + (i+1);
+      var features = map.queryRenderedFeatures(e.point, {layers: [current_layer]}); //returns an array of objects
+      var cell_value = features[0].properties.gridcode; //accesses gridcode object
+      var adjustedValue = (cell_value/100000 - 273.15).toFixed(2); //Map specific calculation
+      var visibleValue = adjustedValue + "&#8451;"; //map specific calculation
+      document.getElementById(divID).innerHTML = visibleValue;
+
+
+      //Change movable bar length
+      var barPercentage = (adjustedValue - minValue)/(maxValue - minValue)*barWidth;
+      var newBarWidth = barPercentage + "px";
+      var barID = "movableBar" + (i+1);
+      document.getElementById(barID).style.width = newBarWidth;
+
+      //change movable bar color
+      var newColor = "";
+      switch (true){
+        case cell_value<timeSeriesStops[0]:
+            newColor = timeSeriesColors[0];
+            break;
+        case cell_value<timeSeriesStops[1]:
+          newColor = timeSeriesColors[1];
+          break;
+        case cell_value<timeSeriesStops[2]:
+          newColor = timeSeriesColors[2];
+          break;
+        case cell_value<timeSeriesStops[3]:
+          newColor = timeSeriesColors[3];
+          break;
+        case cell_value>=timeSeriesStops[3]:
+          newColor = timeSeriesColors[4];
+          break;
+      }
+      document.getElementById(barID).style.backgroundColor = newColor;
+
+
+      //change "active_layer" value
+      if (current_layer === active_layer){
+        document.getElementById('hover-cell').innerHTML = visibleValue;
+      }
+
+    }
+
+	});
+
+//potentially find another way to structure this??
+// loop though layers until you find the active one (opacity = 0.65)
+//the find map.on mousemove e.point set opacity = 1
+//then on map.on mouseleave e.point set opacity = 0.65
+//you might be able to do this inside the for loop (look it over)
+
+/*	map.on('mousemove', 'time-series1', function (e) {
+for (var i = 0; i < layer_IDs.length; i++){
+  var features = map.queryRenderedFeatures(e.point, {layers: [layer_IDs[i]]}); //returns an array of objects
+  var fillOpacity = features[0].layer.paint['fill-opacity'];
+  //console.log(e.features[0]);
+    if (fillOpacity === 0.65){
+      map.setFeatureState({source: {    'timeseries4',
+          {
+            'type': 'vector',
+            'url': 'mapbox://noah-b.4yn5k62z'
+          }}, id: e.features.id}, { hover: true});
+
+    }
+  }
+}); */
+
+
+});
+
+
+
+  </script>
+
+</body>
+</html>
