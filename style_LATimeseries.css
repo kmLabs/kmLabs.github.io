@@ -45,6 +45,8 @@ a {
 }
 
 
+
+
 #consoleControl {
   position: absolute;
   width: 60px;
@@ -74,6 +76,10 @@ a {
   padding: 10px 20px;
   border-radius: 10px;
   background-color: black;
+}
+
+.topSpace{
+  margin-top: 150px;
 }
 
 .session {
@@ -148,4 +154,12 @@ a {
   margin-bottom: 10px;
   display: inline-block;
   color: white;
+}
+
+.CtoF {
+  color: white;
+  font-size: 16px;
+  line-height: 20px;
+  display: inline-block;
+
 }
