@@ -21,11 +21,18 @@
   <div id='map'></div>
 
   <div id='console'>
-    <h1>LA Time Series</h1>
+    <div class = "topSpace"></div>
     <!--legend -->
 
     <div class='session'>
-      <h2>Temperature &#8451;</h2>
+
+      <div id = 'CtoFconverter' class = 'CtoF'>
+        <h2>Temperature</h2>
+        <form style="display: inline-block">
+            <input  type="radio" name="CtoFbutton" value="celcius" checked> &deg;C
+            <input  type="radio" name="CtoFbutton" value="satellite"> &deg;F
+        </form>
+      </div>
 
       <div class = "scale">
         <div class = "color" style = "background: #fef0d9"></div>
@@ -37,15 +44,18 @@
 
 
       <div class='scale'>
-        <div class='tempLabel'>7</div>
-        <div class='tempLabel'>12</div>
-        <div class='tempLabel'>17</div>
-        <div class='tempLabel'>22</div>
-        <div class='tempLabel'>27</div>
+        <div id = 'tempClass1' class='tempLabel'>7</div>
+        <div id = 'tempClass2' class='tempLabel'>12</div>
+        <div id = 'tempClass3' class='tempLabel'>17</div>
+        <div id = 'tempClass4'class='tempLabel'>22</div>
+        <div id = 'tempClass5' class='tempLabel'>27</div>
       </div>
 
 
       <div class= 'scale'></div>
+
+
+
       <div class='session' id='sliderbar'>
           <h2>June 1st, <label id='active-timestamp'>1</label>pm</h2>
           <input id='slider' class='sliderConst' type='range' min='0' max='4' step='1' value='0' />
@@ -69,8 +79,9 @@
       <div class='dynamicData' id='fourthLayerValue'><h2>4pm:  &nbsp;<label id='hover-cell-4'>N/A</label></h2><div class='movableBar' id='movableBar4'></div></div>
       <div class='dynamicData' id='fifthLayerValue'><h2>5pm:  &nbsp;<label id='hover-cell-5'>N/A</label></h2><div class='movableBar' id='movableBar5'></div></div>
 
-      <!--  START HERE  -->
-      <div id = 'backgroundControl' class='backgroundControl'>
+<!---
+
+<div id = 'backgroundControl' class='backgroundControl'>
         <br><div class ="backgroundControlText">Background Image Control</div>
         <form>
             <input  type="radio" name="mapBackground" value="Regular" checked> Regular
@@ -78,6 +89,11 @@
         </form>
       </div>
     </div>
+    --->
+
+
+</div>
+
     <div id = 'consoleControl'><div id = 'ccText' class = 'consoleControlText'>Hide</div></div>
 
   <script src="sources.js"></script>
@@ -107,6 +123,21 @@ map.on('load', function() {
 
 
 
+
+
+
+
+
+//add 3-D
+var labelLayerId;
+  for (var i = 0; i < layers.length; i++) {
+      if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+          labelLayerId = layers[i].id;
+          break;
+        }
+}
+
+
    // Find the index of the first symbol layer in the map style
    var firstSymbolId;
    for (var i = 0; i < layers.length; i++) {
@@ -117,6 +148,8 @@ map.on('load', function() {
    };
 
 
+
+
     //load map sources
     mapSources.forEach(function(source) {
         let id = source[0];
@@ -124,18 +157,23 @@ map.on('load', function() {
         map.addSource(id, obj)
       });
 
-
+/*
+//satelite layer
 map.addSource("satellite", {
     "type": "raster",
     "url": "mapbox://mapbox.satellite",
     "tileSize": 256
 });
 
+*/
+/*
+//terrain source
+map.addSource("terrain", {
+  "type": "vector",
+  "url":"mapbox://mapbox.mapbox-terrain-v2"
+});
 
-
-
-
-
+*/
     //load map layers
     mapLayers.forEach(function(layer) {
         let obj = layer[0];
@@ -144,12 +182,64 @@ map.addSource("satellite", {
       });
 
 
+
+      map.addLayer({
+        'id': '3d-buildings',
+        'source': 'composite',
+        'source-layer': 'building',
+        'filter': ['==', 'extrude', 'true'],
+        'type': 'fill-extrusion',
+        'minzoom': 15,
+        'light': {"intensity":0.5,"anchor":"viewport"},
+        'paint': {
+            'fill-extrusion-color': '#fc8d59',
+
+            // use an 'interpolate' expression to add a smooth transition effect to the
+            // buildings as the user zooms in
+            'fill-extrusion-height': [
+            "interpolate", ["linear"], ["zoom"],
+            15, 0,
+            15.05, ["get", "height"]
+            ],
+            'fill-extrusion-base': [
+            "interpolate", ["linear"], ["zoom"],
+            15, 0,
+            15.05, ["get", "min_height"]
+            ],
+            'fill-extrusion-opacity': 0.6,
+            }
+      }, firstSymbolId);
+
+
+
+
+
+/*
+//Add satellite layer
       map.addLayer({
         'id': 'satellite', //this layer slows everything down a bit
         'type': 'raster',
         'source': 'satellite',
         'paint': {'raster-opacity': 0} //starts as opaque
       }, 'time-series1'); //sets it below the lowest data layer
+
+      */
+/*
+  //add hillshade on terrain layer
+    map.addLayer({
+      'id': 'terrain',
+      'type': 'fill',
+      'source': 'terrain',
+      'source-layer': 'hillshade',
+      "paint": {
+"fill-color": "rgba(66,100,251, 0.3)",
+"fill-outline-color": "rgba(66,100,251, 1)"
+}
+
+    })
+*/
+
+
 
     //makes first layer visible at start
     map.setPaintProperty(layer_IDs[0], 'fill-opacity',0.65);
@@ -163,7 +253,7 @@ map.addSource("satellite", {
         for (var i = 0; i < layer_IDs.length; i++){
           var ID = layer_IDs[i];
           if (ID === selected_layer){
-            map.setPaintProperty(selected_layer, 'fill-opacity', 0.65);
+            map.setPaintProperty(selected_layer, 'fill-opacity', 0.65); 
           }
         }
         map.setPaintProperty(active_layer, 'fill-opacity', 0);
@@ -171,6 +261,7 @@ map.addSource("satellite", {
 
   });
 
+/*
   //Changed the Background layer
   document.getElementById('backgroundControl').addEventListener("click", function(){
     if (document.getElementsByName('mapBackground')[0].checked){
@@ -179,6 +270,29 @@ map.addSource("satellite", {
     }
     else{
       map.setPaintProperty('satellite', 'raster-opacity', 1); //GET RID OF
+
+    }
+  });
+  */
+
+
+//changes legend color bar values
+  document.getElementById('CtoFconverter').addEventListener("click", function(){
+    if (document.getElementsByName('CtoFbutton')[0].checked){
+      document.getElementById("tempClass1").innerHTML = "7";
+      document.getElementById("tempClass2").innerHTML = "12";
+      document.getElementById("tempClass3").innerHTML = "17";
+      document.getElementById("tempClass4").innerHTML = "22";
+      document.getElementById("tempClass5").innerHTML = "27";
+    }
+    else{
+      document.getElementById("tempClass1").innerHTML = "44.6";
+      document.getElementById("tempClass2").innerHTML = "53.6";
+      document.getElementById("tempClass3").innerHTML = "62.6";
+      document.getElementById("tempClass4").innerHTML = "71.6";
+      document.getElementById("tempClass5").innerHTML = "80.6";
+
+
 
     }
   });
@@ -215,12 +329,22 @@ map.addSource("satellite", {
     var active_layer = 'time-series' + document.getElementById('active-timestamp').innerText;
     //Gets value for all layers
     for (var i = 0; i < layer_IDs.length; i++){
+      var visibleValue;
       var current_layer = 'time-series' + (i+1);
       var divID = 'hover-cell-' + (i+1);
       var features = map.queryRenderedFeatures(e.point, {layers: [current_layer]}); //returns an array of objects
       var cell_value = features[0].properties.gridcode; //accesses gridcode object
-      var adjustedValue = (cell_value/100000 - 273.15).toFixed(2); //Map specific calculation
-      var visibleValue = adjustedValue + "&#8451;"; //map specific calculation
+      var adjustedValue = (cell_value/100000 - 273.15); //Map specific calculation
+      var Cvalue = adjustedValue.toFixed(2) + "&deg;C"; //puts together celcius
+      var Fvalue = (adjustedValue*1.8 + 32).toFixed(2) + "&deg;F"; //puts together farenheight
+
+      // sets the dynamic values to celcius or farenheight
+      if (document.getElementsByName('CtoFbutton')[0].checked){
+        visibleValue = Cvalue;
+      }
+      else{
+        visibleValue = Fvalue;
+      }
       document.getElementById(divID).innerHTML = visibleValue;
 
 
