@@ -3,7 +3,7 @@
 <head>
 
   <meta charset='utf-8' />
-  <title> LA Time Series </title>
+  <title> km.L </title>
   <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
   <script src='https://api.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.js'></script>
   <link href='https://api.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.css' rel='stylesheet' />
@@ -21,7 +21,8 @@
   <div id='map'></div>
 
   <div id='console'>
-    <div class = "topSpace"></div>
+    <img src ='kmLABS_LOGOwhite.png' alt = 'km.L'
+                                 style = 'width:105px;height:32px;margin-top:5px;'>
     <!--legend -->
 
     <div class='session'>
@@ -253,7 +254,7 @@ map.addSource("terrain", {
         for (var i = 0; i < layer_IDs.length; i++){
           var ID = layer_IDs[i];
           if (ID === selected_layer){
-            map.setPaintProperty(selected_layer, 'fill-opacity', 0.65); 
+            map.setPaintProperty(selected_layer, 'fill-opacity', 0.65);
           }
         }
         map.setPaintProperty(active_layer, 'fill-opacity', 0);
