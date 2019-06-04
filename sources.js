@@ -37,6 +37,13 @@ const mapSources = [
       'type': 'vector',
       'url': 'mapbox://noah-b.4qepjc1w'
     }
+  ],
+  [
+    'hoverSource',
+    {
+      'type': 'vector',
+      'url': 'mapbox://noah-b.80v5d5mj'
+    }
   ]
 
 ];

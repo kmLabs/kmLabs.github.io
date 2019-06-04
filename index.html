@@ -80,19 +80,6 @@
       <div class='dynamicData' id='fourthLayerValue'><h2>4pm:  &nbsp;<label id='hover-cell-4'>N/A</label></h2><div class='movableBar' id='movableBar4'></div></div>
       <div class='dynamicData' id='fifthLayerValue'><h2>5pm:  &nbsp;<label id='hover-cell-5'>N/A</label></h2><div class='movableBar' id='movableBar5'></div></div>
 
-<!---
-
-<div id = 'backgroundControl' class='backgroundControl'>
-        <br><div class ="backgroundControlText">Background Image Control</div>
-        <form>
-            <input  type="radio" name="mapBackground" value="Regular" checked> Regular
-            <input  type="radio" name="mapBackground" value="satellite"> Satellite
-        </form>
-      </div>
-    </div>
-    --->
-
-
 </div>
 
     <div id = 'consoleControl'><div id = 'ccText' class = 'consoleControlText'>Hide</div></div>
@@ -124,11 +111,6 @@ map.on('load', function() {
 
 
 
-
-
-
-
-
 //add 3-D
 var labelLayerId;
   for (var i = 0; i < layers.length; i++) {
@@ -141,14 +123,25 @@ var labelLayerId;
 
    // Find the index of the first symbol layer in the map style
    var firstSymbolId;
+
+   firstSymbolId = 'waterway-label';
+   /* USE IF DIFFERENT BACKGROUND LAYER
+      DONT TAKE OUT WHEN CLEANING
+
    for (var i = 0; i < layers.length; i++) {
-       if (layers[i].type === 'symbol') {
+     console.log(layers[i].type);
+     console.log(layers[i].id);
+
+
+    if (layers[i].type === 'symbol') {
            firstSymbolId = layers[i].id;
            break;
        }
+
    };
 
 
+          */
 
 
     //load map sources
@@ -158,23 +151,6 @@ var labelLayerId;
         map.addSource(id, obj)
       });
 
-/*
-//satelite layer
-map.addSource("satellite", {
-    "type": "raster",
-    "url": "mapbox://mapbox.satellite",
-    "tileSize": 256
-});
-
-*/
-/*
-//terrain source
-map.addSource("terrain", {
-  "type": "vector",
-  "url":"mapbox://mapbox.mapbox-terrain-v2"
-});
-
-*/
     //load map layers
     mapLayers.forEach(function(layer) {
         let obj = layer[0];
@@ -182,6 +158,26 @@ map.addSource("terrain", {
         layer_IDs.push(obj.id); //adds names of all layers to an array
       });
 
+
+
+      map.addLayer({
+        'id': 'hoverLayer',
+        'type': 'fill',
+        'source': 'hoverSource',
+        'source-layer': 'AirTempBack-3uihd8',
+        'paint': {
+        'fill-color': 'black',
+        'fill-opacity':
+         ["case",
+              ["boolean", ["feature-state", "hover"], false],
+              0.5,
+              0
+            ],
+        'fill-outline-color': 'rgba(254, 240, 217, 0)'
+      },
+        'layout': {}
+
+      });
 
 
       map.addLayer({
@@ -193,8 +189,7 @@ map.addSource("terrain", {
         'minzoom': 15,
         'light': {"intensity":0.5,"anchor":"viewport"},
         'paint': {
-            'fill-extrusion-color': '#fc8d59',
-
+            'fill-extrusion-color': 'white',
             // use an 'interpolate' expression to add a smooth transition effect to the
             // buildings as the user zooms in
             'fill-extrusion-height': [
@@ -207,43 +202,20 @@ map.addSource("terrain", {
             15, 0,
             15.05, ["get", "min_height"]
             ],
-            'fill-extrusion-opacity': 0.6,
+            'fill-extrusion-opacity': 0.85,
+
             }
       }, firstSymbolId);
 
 
 
-
-
-/*
-//Add satellite layer
-      map.addLayer({
-        'id': 'satellite', //this layer slows everything down a bit
-        'type': 'raster',
-        'source': 'satellite',
-        'paint': {'raster-opacity': 0} //starts as opaque
-      }, 'time-series1'); //sets it below the lowest data layer
-
-      */
-/*
-  //add hillshade on terrain layer
-    map.addLayer({
-      'id': 'terrain',
-      'type': 'fill',
-      'source': 'terrain',
-      'source-layer': 'hillshade',
-      "paint": {
-"fill-color": "rgba(66,100,251, 0.3)",
-"fill-outline-color": "rgba(66,100,251, 1)"
-}
-
-    })
-*/
-
-
-
     //makes first layer visible at start
     map.setPaintProperty(layer_IDs[0], 'fill-opacity',0.65);
+
+
+    //STILL NEED TO MAKE BUILDING LAYER CORRECT COLOR AT START
+
+
 
     //Changes the layer visible via slider and sets a new active-timestamp
     document.getElementById('slider').addEventListener('input', function(e) {
@@ -251,30 +223,71 @@ map.addSource("terrain", {
         var selected_layer = "time-series" + (time_selection + 1); //selected_layer gets layer ID
         var active_layer = 'time-series' + document.getElementById('active-timestamp').innerText; // layer that is completely visible
 
+        document.getElementById('active-timestamp').innerText = time_selection + 1; //changes number next to timestamp
+
+
         for (var i = 0; i < layer_IDs.length; i++){
           var ID = layer_IDs[i];
-          if (ID === selected_layer){
+          if (ID === selected_layer){ //TRY CHANGING THIS TO FEATURE STATE
             map.setPaintProperty(selected_layer, 'fill-opacity', 0.65);
           }
         }
         map.setPaintProperty(active_layer, 'fill-opacity', 0);
-		    document.getElementById('active-timestamp').innerText = time_selection + 1; //changes number next to timestamp
+        console.log(active_layer);
+
+        //change color of 3-D layer
+        //Need to loop through and change every grid id to its own color
+        var buildingLayer = '3d-buildings';
+        var features = map.queryRenderedFeatures(e.point, {layers: [selected_layer]}); //returns an array of objects
+        var features1 = map.queryRenderedFeatures(e.point, {layers: ['3d-buildings']}); //returns an array of objects
+
+        var myFeatures = map.querySourceFeatures('composite',
+     {
+         sourceLayer: 'building',
+        // i'm confident there is data matching this filter
+         filter: ["==", "type", "feature"]
+     }
+     );
+     console.log(features[0]);
+     console.log(features1[0]);
+     console.log(features1[0]._vectorTileFeature._x + " = x-coordinate"); //
+     console.log(features1.length);
+      //  FIND SOMEWAY TO SEE THE BUILDING ARRAY
+        //for (var i = 0; i < features.length; i++){
+            //gridcodeNum = features[i].properties.gridcode;
+
+    //  }
+        var gridcodeNum = features[0].properties.gridcode;
+        var buildingColor = detGridColor(gridcodeNum);
+        map.setPaintProperty('3d-buildings', 'fill-extrusion-color', buildingColor);
+
+
+
 
   });
 
-/*
-  //Changed the Background layer
-  document.getElementById('backgroundControl').addEventListener("click", function(){
-    if (document.getElementsByName('mapBackground')[0].checked){
-      map.setPaintProperty('satellite', 'raster-opacity', 0); //GET RID OF
 
-    }
-    else{
-      map.setPaintProperty('satellite', 'raster-opacity', 1); //GET RID OF
-
-    }
-  });
-  */
+function detGridColor(gridNum){
+  var newColor = "";
+  switch (true){
+    case gridNum<timeSeriesStops[0]:
+        newColor = timeSeriesColors[0];
+        break;
+    case gridNum<timeSeriesStops[1]:
+      newColor = timeSeriesColors[1];
+      break;
+    case gridNum<timeSeriesStops[2]:
+      newColor = timeSeriesColors[2];
+      break;
+    case gridNum<timeSeriesStops[3]:
+      newColor = timeSeriesColors[3];
+      break;
+    case gridNum>=timeSeriesStops[3]:
+      newColor = timeSeriesColors[4];
+      break;
+  }
+  return newColor;
+}
 
 
 //changes legend color bar values
@@ -392,21 +405,62 @@ map.addSource("terrain", {
 //then on map.on mouseleave e.point set opacity = 0.65
 //you might be able to do this inside the for loop (look it over)
 
-/*	map.on('mousemove', 'time-series1', function (e) {
+
+
+var prevHoverID = 0;
+map.on('mousemove', 'time-series1', function (e) {
+
+  var features = map.queryRenderedFeatures(e.point, 'hoverLayer'); //returns an array of objects
+
+  //checks to make sure we are grabbing the right info
+  if (features[0].layer.id != "hoverLayer"){
+    console.log("Wrong feature for hover"); //Leave this in
+  }
+  console.log(e.features[0].id);
+
+      //unhighlight old cell
+      map.setFeatureState({
+        source: 'hoverSource',
+        sourceLayer: 'AirTempBack-3uihd8',
+        id: prevHoverID },
+        {hover: false}
+      );
+
+      //higlight new cell
+      map.setFeatureState({
+        source: 'hoverSource',
+        sourceLayer: "AirTempBack-3uihd8",
+        id: e.features[0].id},
+        {hover: true}
+      );
+
+
+      prevHoverID = e.features[0].id;
+
+
+});
+
+
+
+
+
+/*
+map.on('mousemove', 'time-series1', function (e) {
 for (var i = 0; i < layer_IDs.length; i++){
   var features = map.queryRenderedFeatures(e.point, {layers: [layer_IDs[i]]}); //returns an array of objects
   var fillOpacity = features[0].layer.paint['fill-opacity'];
-  //console.log(e.features[0]);
     if (fillOpacity === 0.65){
-      map.setFeatureState({source: {    'timeseries4',
-          {
-            'type': 'vector',
-            'url': 'mapbox://noah-b.4yn5k62z'
-          }}, id: e.features.id}, { hover: true});
+
+      map.setFeatureState({
+        source: 'timeseries4',
+        sourceLayer: "ts4-7g9v1j", //just for series 4
+        id: e.features[0].id},
+        {hover: true});
 
     }
   }
-}); */
+});
+*/
 
 
 });

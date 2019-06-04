@@ -68,15 +68,15 @@ const dataPaint = {
       timeSeriesColors[4]
 
   ],
-
-  /*  'fill-opacity':
+/*
+'fill-opacity':
  ["case",
       ["boolean", ["feature-state", "hover"], false],
       1,
-      0.65
+      0
     ] //need to set everything to 0 at start or add a third case
+*/
 
-    */
   'fill-opacity': 0
 };
 
@@ -125,6 +125,5 @@ const mapLayers = [
     'paint': dataPaint,
     'layout': {}
   }]
-
 
 ];
